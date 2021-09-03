@@ -17,7 +17,9 @@ function checksExistsUserAccount(request, response, next) {
   return (
     user
     ? next()
-    : response.status(400).send()
+    : response.status(404).json({
+      error: 'Usuario n existente'
+    }).send()
   );
 }
 
@@ -69,11 +71,16 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
   const { title, deadline } = request.body;
 
   const todo = user.todos.find((todo) => todo.id === id);
+  if (todo) {
+    todo.title = title;
+    todo.deadline = new Date(deadline);
+  }
 
-  todo.title = title;
-  todo.deadline = new Date(deadline);
-
-  return response.json(todo).send;
+  return (
+    todo
+    ? response.json(todo).send() 
+    : response.status(404).json({ error: 'Id de todo invalido!'})
+  );
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
@@ -82,10 +89,14 @@ app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
   const { id } = request.params;
 
   const todo = user.todos.find((todo) => todo.id === id);
-  
-  todo.done = true;
+  if (todo)
+    todo.done = true;
 
-  return response.send();
+  return (
+    todo
+    ? response.json(todo).send()
+    : response.status(404).json({ error: 'Id de todo inexistente!'}).send()
+  );
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
@@ -94,10 +105,14 @@ app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
   const { id } = request.params;
 
   const todo = user.todos.find((todo) => todo.id === id);
+  if (todo)
+    user.todos.splice(user.todos.indexOf(todo), user.todos);
 
-  user.todos.splice(user.todos.indexOf(todo), user.todos);
-
-  return response.send();
+  return (
+    todo
+    ? response.status(204).send()
+    : response.status(404).json({ error: 'Id de todo inexistente' }).send()
+  );
 });
 
 module.exports = app;
